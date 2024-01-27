@@ -46,7 +46,8 @@ def clone_repos(repo_urls, output_dir, due_date=None):
         repo_dir = os.path.splitext(repo_url.rsplit('/', 1)[1])[0]
         print(">> cloning %4d of %4d: %s" % (i + 1, len(repo_urls), repo_dir))
 
-        p = SP.Popen(['git', 'clone', repo_url, repo_dir], stdout=SP.PIPE, stderr=SP.PIPE, cwd=output_dir)
+        p = SP.Popen(['git', 'clone', repo_url, repo_dir],
+                     stdout=SP.PIPE, stderr=SP.PIPE, cwd=output_dir)
         out, err = p.communicate()
 
         time.sleep(2)  # prevents server from kicking me out
@@ -55,18 +56,17 @@ def clone_repos(repo_urls, output_dir, due_date=None):
             print("  >> clone failed with this output:")
             print("  >> stdout:", out)
             print("  >> stderr:", err)
-            
+
         # finding the date of the most recent commit
         p = SP.Popen(['git', 'log', '-n', '1', 'HEAD'],
                      stdout=SP.PIPE, stderr=SP.PIPE, cwd=(output_dir + '/' + repo_dir))
-        
 
         temp, _ = p.communicate()
         output = temp.decode('ascii')
         output = output[output.find('Date:'):]
         output = output[:output.find('\n')]
 
-        print( '>>>> ' + output + '\n')
+        print('>>>> ' + output + '\n')
 
         # If we have a due date specified, figure out the last commit before
         # the due date.  Otherwise, use the HEAD commit.
@@ -135,7 +135,8 @@ def get_repo_urls(org, prefix, user, token, usernames):
                 for name in usernames:
                     if repo['name'].endswith(name):
                         usernames.remove(name)
-                        repo_urls.add(re.sub(r'(git@github.com?:)', repl, repo['ssh_url']))
+                        repo_urls.add(
+                            re.sub(r'(git@github.com?:)', repl, repo['ssh_url']))
 
         # Stop if this page of repos was empty.
         if len(resp.json()) == 0:
@@ -155,35 +156,41 @@ def main(args):
     with open(args.ORG_FILE) as fj:
         ORG_NAME = fj.read().strip()
 
-
     users = []
 
     # get usernames
-    with open("/Users/Benjamin/Desktop/Misc./School/CS1342-TA/Program_Getting/usernames.csv") as ifs:
+    with open("usernames.csv") as ifs:
         reader = csv.reader(ifs)
         for row in reader:
             for item in row:
-                users.append(str(item))   
+                users.append(str(item))
 
-    repo_urls = get_repo_urls(ORG_NAME, args.ASSIGNMENT_PREFIX, args.user, token, users)
+    repo_urls = get_repo_urls(
+        ORG_NAME, args.ASSIGNMENT_PREFIX, args.user, token, users)
     clone_repos(repo_urls, args.OUTPUT_DIR, args.due_date)
 
     if len(users) > 0:
-        print('\n------------------------------\n' + str(len(users)) + ' repos missing:')
+        print('\n------------------------------\n' +
+              str(len(users)) + ' repos missing:')
         for name in users:
             print('>> ' + name)
         print('------------------------------')
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="Download GitHub Classroom repositories for a given assignment")
-    parser.add_argument('ORG_FILE', help="Organization name for GitHub Classroom")
-    parser.add_argument('ASSIGNMENT_PREFIX', help="Prefix string for the assignment.")
-    parser.add_argument('OUTPUT_DIR', help="Directory in which to output cloned repos.")
+    parser = ArgumentParser(
+        description="Download GitHub Classroom repositories for a given assignment")
+    parser.add_argument(
+        'ORG_FILE', help="Organization name for GitHub Classroom")
+    parser.add_argument('ASSIGNMENT_PREFIX',
+                        help="Prefix string for the assignment.")
+    parser.add_argument(
+        'OUTPUT_DIR', help="Directory in which to output cloned repos.")
     parser.add_argument('-d', '--due-date',
                         help="Optional ISO-8601 timestamp corresponding to the assignment's due date.")
     parser.add_argument('-u', '--user', help="GitHub username.")
-    parser.add_argument('-t', '--token-file', help="File containing GitHub authorization token/password.")
+    parser.add_argument(
+        '-t', '--token-file', help="File containing GitHub authorization token/password.")
     args = parser.parse_args()
 
     main(args)
